@@ -11,7 +11,7 @@ namespace OutlookAddInThreadsAndQueue.CheckAttachmentSecurity.Services
     {
         //Data For Reputation Service 
         static string CLIENT_KEY_RS = "2fddabf7-ac89-4ba5-9c1d-69af31f86408";
-        static string TOKEN = "exp=1622902986~acl=/*~hmac=09e569690b2303ad159f9d50174c448c9fe8b2d5bac0910ebdda6c7613b4e242";
+        static string TOKEN = "exp=1623855427~acl=/*~hmac=356c729ca4eef44ee7bad67b36501c9a552328bc9502a43d21d1deb2b370cf93;
         static string RS_URL = "https://rep.checkpoint.com/file-rep/service/v2.0/query?";
 
         //Data For Threat Emulation
