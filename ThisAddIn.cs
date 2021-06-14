@@ -8,7 +8,6 @@ using OutlookAddInThreadsAndQueue.Entities;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using OutlookAddInThreadsAndQueue.CheckAttachmentSecurity;
 using OutlookAddInThreadsAndQueue.CheckAttachmentSecurity.Services;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -113,7 +112,7 @@ namespace OutlookAddInThreadsAndQueue
                     {
                         var checkUrlAndIp = Task.Run(() => CheckUrlAndIp(mailitem));
                         var checkAttachments = Task.Run(() => CheckAttachmentsSecurity(mailitem));
-                        await Task.WhenAll(checkUrlAndIp, checkAttachments);
+                        await Task.WhenAll(checkUrlAndIp,checkAttachments);
                     }
                    
                 }
@@ -172,6 +171,10 @@ namespace OutlookAddInThreadsAndQueue
                             var mail = (Outlook.MailItem)Application.Session.GetItemFromID(mailItem.mailID, missing);
                             string alertMessage = "\r\n\n\n" + "The attachment: " + fileName + " is secure. " + "\r\n\n\n";
                             mail.HTMLBody = mail.HTMLBody.Insert(0, alertMessage);
+                            mail.Save();
+
+
+
                         }
 
                         else if (severity != "" && confidence != "")//the attachment is malicious
@@ -200,25 +203,29 @@ namespace OutlookAddInThreadsAndQueue
             if (mailItem.body != null)
             {
                 string[] seperatingTags = { "<", ">" };
+                string alertMessage = "urls are not malicious";
                 StringBuilder mailWithoutMaliciousUrl = new StringBuilder();
                 List<string> splitMessage = mailItem.body.Split(seperatingTags, StringSplitOptions.RemoveEmptyEntries).ToList();
                 var mail = (Outlook.MailItem)this.Application.Session.GetItemFromID(mailItem.mailID);
                 for (int i = 0; i < splitMessage.Count; i++)
                 {
-                    int lengthBody = mailItem.body.Length;
                     if (!(splitMessage[i].StartsWith("http") || splitMessage[i].StartsWith("www") || splitMessage[i].StartsWith("https"))) { mailWithoutMaliciousUrl.Append(splitMessage[i]); continue; }
                     //check if valid url
                     if (!urlChecker.CheckIfValidUrl(splitMessage[i])) { mailWithoutMaliciousUrl.Append(splitMessage[i]); continue; }
                     // valid url, lets check if safe
                     if (serverCheck.PostAsyncfunc(splitMessage[i].Substring(0, splitMessage[i].Length - 2)) == "url is not malicious")
                     {
-
                         mailWithoutMaliciousUrl.Append(splitMessage[i]);
+                    }
+                    if (serverCheck.PostAsyncfunc(splitMessage[i].Substring(0, splitMessage[i].Length - 2)) == "url is malicious")
+                    {
+                        alertMessage = "this email is malicious ";
                     }
                 }
                 //append only not malicious url
                 if ((mail.EntryID == mailItem.mailID))
                 {
+                    mailWithoutMaliciousUrl.Insert(0, alertMessage);
                     mail.Body = mailWithoutMaliciousUrl.ToString();
                     mail.Save();
 

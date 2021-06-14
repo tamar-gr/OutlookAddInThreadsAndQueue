@@ -12,6 +12,7 @@ namespace OutlookAddInThreadsAndQueue.CheckUrlSecurity.server
 {
    public  class CheckPointSecureUrlClient
     {
+        //static string token=
         private string token { get; set; }
         public CheckPointSecureUrlClient()
         {
