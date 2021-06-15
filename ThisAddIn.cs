@@ -107,11 +107,12 @@ namespace OutlookAddInThreadsAndQueue
             {
                 while (!_cancellationTokenSource.IsCancellationRequested)                            // cancellationToken: Object that can be used to cancel the take operation.      
                 {                                                                                   //A call to Take may block until an item is available to be removed or the token is canceled
-                    MailInfo mailitem = waitingMails.Take(token);
-                    if (mailitem.body != null)
+                    MailInfo mailItem = waitingMails.Take(token);
+                    if (mailItem.body != null)
                     {
-                        var checkUrlAndIp = Task.Run(() => CheckUrlAndIp(mailitem));
-                        var checkAttachments = Task.Run(() => CheckAttachmentsSecurity(mailitem));
+                       
+                        var checkUrlAndIp = Task.Run(() => CheckUrlAndIp(mailItem));
+                        var checkAttachments = Task.Run(() => CheckAttachmentsSecurity(mailItem));
                         await Task.WhenAll(checkUrlAndIp,checkAttachments);
                     }
                    
@@ -173,8 +174,6 @@ namespace OutlookAddInThreadsAndQueue
                             mail.HTMLBody = mail.HTMLBody.Insert(0, alertMessage);
                             mail.Save();
 
-
-
                         }
 
                         else if (severity != "" && confidence != "")//the attachment is malicious
@@ -202,8 +201,8 @@ namespace OutlookAddInThreadsAndQueue
         {
             if (mailItem.body != null)
             {
+                string alertMessage = string.Empty;
                 string[] seperatingTags = { "<", ">" };
-                string alertMessage = "urls are not malicious";
                 StringBuilder mailWithoutMaliciousUrl = new StringBuilder();
                 List<string> splitMessage = mailItem.body.Split(seperatingTags, StringSplitOptions.RemoveEmptyEntries).ToList();
                 var mail = (Outlook.MailItem)this.Application.Session.GetItemFromID(mailItem.mailID);
@@ -216,15 +215,18 @@ namespace OutlookAddInThreadsAndQueue
                     if (serverCheck.PostAsyncfunc(splitMessage[i].Substring(0, splitMessage[i].Length - 2)) == "url is not malicious")
                     {
                         mailWithoutMaliciousUrl.Append(splitMessage[i]);
+                        alertMessage = "urls are secure";
                     }
                     if (serverCheck.PostAsyncfunc(splitMessage[i].Substring(0, splitMessage[i].Length - 2)) == "url is malicious")
                     {
-                        alertMessage = "this email is malicious ";
+                        alertMessage = "The email contained phishing urls that were removed ";
                     }
                 }
                 //append only not malicious url
                 if ((mail.EntryID == mailItem.mailID))
                 {
+                    if (alertMessage.Length == 0)
+                        alertMessage = "No urls found in email for review";
                     mailWithoutMaliciousUrl.Insert(0, alertMessage);
                     mail.Body = mailWithoutMaliciousUrl.ToString();
                     mail.Save();
